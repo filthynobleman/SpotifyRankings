@@ -131,7 +131,7 @@ def predict_data(classifier, data, verbosity_level = 0):
     '''
     if verbosity_level > 0:
         print "Applying the prediction..."
-    pred = classifier.predict(data)
+    pred = classifier.predict(data[TOPSONGS_FEATURES])
     if verbosity_level > 0:
         print "Prediction completed successfully."
     return pred
@@ -158,10 +158,7 @@ def predict_test_data(classifier, test, top_length = 10, verbosity_level = 0):
     # Apply the prediction
     pred = predict_data(classifier, test_x, verbosity_level)
     # Compute the scores and return them
-    accuracy = accuracy_score(test_y, pred)
-    precision = precision_score(test_y, pred)
-    recall = recall_score(test_y, pred)
-    return (accuracy, precision, recall)
+    return utils.compute_classification_scores(test_y, pred)
 
 def topsongs(training_set, data, top_length = 10, verbosity_level = 0):
     '''
@@ -180,50 +177,40 @@ def topsongs(training_set, data, top_length = 10, verbosity_level = 0):
     clf = fit_classifier(training_set, top_length, verbosity_level)
     # Compute the prediction and return the result
     return predict_data(clf, data, verbosity_level)
-
-def topsongs_main(training_file,    # The file used to train the classifier
-                  data_file,        # The file containing the data to predict
-                  output_file,      # The file in which the prediction is printed
-                  regions,          # The region codes for the interesting regions
-                  top_length,       # The length of the list of the top songs
-                  verbosity_level): # The verbosity level of the debug
-    '''
-    This is the entry point of the program for the topsongs functionality.
-    The function takes as input the filename of the file containing the data used to train the
-    classifier and the filename of the file containing the data that must be classified.
-    Also, the filename of the file in which the prediction has to be printed is given to this
-    function.
-    The input parameter region defines the region codes that limits the dataset to the regions
-    which we are interested in.
-    The input parameter top_length defines the length of the list of the top songs that we
-    want to determine.
-    The input parameter verbosity_level indicates which informations about the execution of
-    the procedure must be printed on the standard output. Default value is 0, that means 
-    nothing has to be printed.
-    '''
-    print "Executing the \"Top Songs\" procedure..."
-    # Read the datasets
-    if verbosity_level > 1:
-        print "Reading the datasets..."
-    train = pd.read_csv(training_file)
-    data = pd.read_csv(data_file)
-    # Initialize the datasets
-    train = initialize_dataset(train, region, verbosity_level)
-    data = initialize_dataset(data, region, verbosity_level)
-    if verbosity_level > 0:
-        print "Datasets successfully readed and initialized."
-    # Execute the topsongs procedure and get the prediction
-    if verbosity_level > 1:
-        print "Executing the training and prediction procedure..."
-    pred = topsongs(train, data, top_length, verbosity_level)
-    # Output the prediction to the given file
-    pd.Series(pred).to_frame().to_csv(output_file, index = False)
-    print "Prediction completed successfully."
-    print "Output can be found in file {0}".format(output_file)
     
 
-def topsongs_test(region, labels = True, top_length = 10, verbosity_level = 0):
+def topsongs_test():
     '''
-    This is a testing function for the "Top Songs" prediction's main.
+    This is a testing function for the "Top Songs" prediction procedure.
     '''
-    pass
+    # Use the same dataset for all the tests. Simply write many times different
+    # subsets of him
+    main_data = pd.read_csv(os.path.join(utils.DATA_DIRECTORY, utils.DATASET_NAME))
+
+
+    print "********** PREDICTION OF THE TOP 10 IN ITALY **********"
+    print "Description:"
+    print "The training set is a sampled 75% of the original dataset."
+    print "The test set is the remaining 25%."
+    print "Trying to predict if, knowing the song and its artist, we are able to"
+    print "predict if the song will occupy a position in the Italian Spotify's"
+    print "top 10 in a certain day."
+    print ""
+    # Get the relevand part of the dataset
+    data = main_data[main_data['Region'] == 'it'].copy()
+    data = initialize_dataset(data, 'it')
+    # Split into train and test
+    train, test = utils.split_dataset_sample(data)
+    pred = topsongs(train, test, 10, 0) 
+    real_y = test[datasetinfo.POSITION_COLUMN] <= 10
+    scores = utils.compute_classification_scores(real_y, pred)
+    print "Scores for this prediction:"
+    print "Accuracy:  {}".format(scores[0])
+    print "Precision: {}".format(scores[1])
+    print "Recall:    {}".format(scores[2])
+    print ""
+    print ""
+    print ""
+
+
+    

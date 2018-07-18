@@ -1,3 +1,3 @@
 import topsongs
 
-topsongs.topsongs('ie', verbosity_level=2)
+topsongs.topsongs_test()

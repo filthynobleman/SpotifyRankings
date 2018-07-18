@@ -11,6 +11,7 @@ import pandas as pd
 import numpy as np
 import os
 from sklearn.preprocessing import LabelEncoder
+from sklearn.metrics import accuracy_score, precision_score, recall_score
 
 DATA_DIRECTORY = "."
 '''
@@ -178,3 +179,17 @@ def impute_categorical_nans(dataset, columns = None, value = '', inplace = False
     # Return the dataset
     return ds
 
+
+def compute_classification_scores(y_true, pred):
+    '''
+    This function computes the main scores for the given prediction pred with respect to
+    the real values y_true.
+    The function returns a 3-tuple containing the following informations:
+        - Accuracy score
+        - Precision score
+        - Recall score
+    '''
+    acc = accuracy_score(y_true, pred)
+    pre = precision_score(y_true, pred)
+    rec = recall_score(y_true, pred)
+    return (acc, pre, rec)
