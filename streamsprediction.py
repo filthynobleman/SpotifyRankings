@@ -12,17 +12,63 @@ import pandas as pd
 import numpy as np
 import utils
 import datasetinfo
-import os
+import os, sys
 
 from sklearn.linear_model import LinearRegression
+from sklearn.svm import LinearSVR
+from sklearn.tree import DecisionTreeRegressor
+from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor
+
+STREAMSPRED_PREV_STREAMS = "Previous Streams"
+'''
+This string represents the name of the column containing the streams registered in the
+last day when the song has obtained a position in the Spotify's top 200 for the same
+country.
+It cannot be supplied by the user.
+'''
 
 STREAMSPRED_FEATURES = [datasetinfo.TRACKNAME_COLUMN,
                         datasetinfo.ARTIST_COLUMN,
-                        datasetinfo.DATE_COLUMN]
+                        datasetinfo.DATE_COLUMN,
+                        STREAMSPRED_PREV_STREAMS]
 '''
 This list represents the list of features used in the "Streams" prediction.
 It cannot be supplied by the user.
 '''
+
+def add_previous_streams(data, verbosity_level = 0):
+    '''
+    This function adds to the dataset a new column containing the previous recorded number
+    of streams. Specifically, in number of streams in the new column is referred to the
+    number of streams registered in the last day when the song has achieved a position in
+    the Spotify's top 200 in the same country.
+    The input parameter verbosity_level indicates which informations about the execution of
+    the procedure must be printed on the standard output. Default value is 0, that means 
+    nothing has to be printed.
+    '''
+    if verbosity_level > 0:
+        print "Adding {} column...".format(STREAMSPRED_PREV_STREAMS)
+    # Add the empty column
+    data[STREAMSPRED_PREV_STREAMS] = None
+    # Get the list of countries
+    countries = data[datasetinfo.REGION_COLUMN].unique()
+    for country in countries:
+        # Get the tracks for that country
+        tracks = data[data[datasetinfo.REGION_COLUMN] == country][datasetinfo.TRACKNAME_COLUMN]
+        tracks = tracks.unique()
+        for track in tracks:
+            subdata = data[data[datasetinfo.REGION_COLUMN] == country]
+            subdata = subdata[subdata[datasetinfo.TRACKNAME_COLUMN] == track]
+            # Shift the streams back of one day
+            streams = subdata[datasetinfo.STREAMS_COLUMN]
+            data.loc[subdata.index, STREAMSPRED_PREV_STREAMS] = streams.shift(1)
+        if verbosity_level > 1:
+            print "\rPrevious streams of tracks for country {} computed.".format(country)
+    # Drop rows with NaN values. We cannot know the number of streams in the next day
+    dropindex = data[data[STREAMSPRED_PREV_STREAMS].isna()].index
+    data = data.drop(index = dropindex)
+    return data
+
 
 def initialize_dataset(dataset = None, regions = 'global', verbosity_level = 0):
     '''
@@ -70,12 +116,14 @@ def initialize_dataset(dataset = None, regions = 'global', verbosity_level = 0):
             print "    {0}".format(reg)
     elif verbosity_level > 0:
         print "Successfully dropped rows not belonging to interesting regions."
+    data = utils.impute_categorical_nans(data, inplace = True,
+                                               verbosity_level = verbosity_level)
+    # Add shifted streams
+    data = add_previous_streams(data, verbosity_level)
     # Drop the region column
     data = data.drop(columns = [datasetinfo.REGION_COLUMN])
     if verbosity_level > 0:
         print "Successfully dropped Region column."
-    data = utils.impute_categorical_nans(data, inplace = True,
-                                               verbosity_level = verbosity_level)
     # Label encodes all the categorical features
     data = utils.label_encode_columns(data, inplace = True, verbosity_level = verbosity_level)
     # Return the dataset
@@ -103,7 +151,7 @@ def fit_classifier(training_set, verbosity_level = 0):
     # Train the regressor
     if verbosity_level > 0:
         print "Training the regressor for \"Streams\" prediction..."
-    clf = LinearRegression()
+    clf = RandomForestRegressor()
     clf.fit(train_x, train_y)
     if verbosity_level > 0:
         print "The classifier has been trained successfully."
@@ -170,9 +218,11 @@ def streamsprediction_test():
 
     # Get the relevand part of the dataset
     data = main_data[main_data['Region'] == 'it'].copy()
-    data = initialize_dataset(data, 'it')
+    data = initialize_dataset(data, 'it', verbosity_level = 2)
     # Split into train and test
     train, test = utils.split_dataset_sample(data)
+    print "Starting computation..."
     pred = streamsprediction(train, test, 0) 
     real_y = test[datasetinfo.STREAMS_COLUMN]
-    print "RMSE: {}".format(utils.compute_rmse(real_y, pred))
+    print "RMSE:      {}".format(utils.compute_rmse(real_y, pred))
+    print "R squared: {}".format(utils.compute_r_squared(real_y, pred))

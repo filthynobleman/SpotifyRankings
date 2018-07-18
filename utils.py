@@ -206,3 +206,19 @@ def compute_rmse(y_true, pred):
     rel_diff = diff / y_true
     mse = (rel_diff**2).sum() / n
     return np.sqrt(mse)
+
+def compute_r_squared(y_true, pred):
+    '''
+    This function computes the R squared for the given prediction with respect to the real
+    values y_true.
+    The R squared measure for two vector A, B of length n is computed as
+        ESS / TSS
+    where
+        ESS = SUM_{i = 1}^{n} (B_i - A*)^2
+        TSS = SUM_{i = 1}^{n} (A_i - A*)^2
+        A*  = SUM_{i = 1}^{n} (A_i / n)
+    '''
+    y_mean = y_true.mean()
+    ess = ((pred - y_mean)**2).sum()
+    tss = ((y_true - y_mean)**2).sum()
+    return ess / tss
