@@ -1,3 +1,3 @@
-import topsongs
+import streamsprediction
 
-topsongs.topsongs_test()
+streamsprediction.streamsprediction_test()

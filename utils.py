@@ -193,3 +193,16 @@ def compute_classification_scores(y_true, pred):
     pre = precision_score(y_true, pred)
     rec = recall_score(y_true, pred)
     return (acc, pre, rec)
+
+def compute_rmse(y_true, pred):
+    '''
+    This function computes the RMSE for the given prediction pred with respect to the real
+    values y_true.
+    The RMSE for two vector A, B of length n is computed as
+        SQRT( SUM_{i = 1}^{n} (((A_i - B_i) / A_i)^2 / n) )
+    '''
+    n = len(y_true)
+    diff = y_true - pred
+    rel_diff = diff / y_true
+    mse = (rel_diff**2).sum() / n
+    return np.sqrt(mse)
