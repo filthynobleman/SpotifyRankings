@@ -112,7 +112,7 @@ def fit_classifier(training_set, top_length = 10, verbosity_level = 0):
     # Create the classifier
     if verbosity_level > 0:
         print "Training the classifier for \"Top Songs\" prediction..."
-    clf = DecisionTreeClassifier(criterion = 'gini')
+    clf = DecisionTreeClassifier(criterion = 'entropy')
     clf.fit(train_x, train_y)
     if verbosity_level > 0:
         print "The classifier has been trained successfully."
@@ -192,9 +192,9 @@ def topsongs_test():
     print "Description:"
     print "The training set is a sampled 75% of the original dataset."
     print "The test set is the remaining 25%."
-    print "Trying to predict if, knowing the song and its artist, we are able to"
-    print "predict if the song will occupy a position in the Italian Spotify's"
-    print "top 10 in a certain day."
+    print "Trying to predict if, knowing the song and its artist, the"
+    print "song will occupy a position in the Italian Spotify's top 10"
+    print "in a certain day."
     print ""
     # Get the relevand part of the dataset
     data = main_data[main_data['Region'] == 'it'].copy()
@@ -213,4 +213,114 @@ def topsongs_test():
     print ""
 
 
-    
+    print "********** PREDICTION OF NEXT WEEK TOP 25 IN IRELAND **********"
+    print "Description:"
+    print "The training set is the fraction of the dataset that goes"
+    print "from 2017-04-01 to 2017-04-30."
+    print "The test set is the fraction of the dataset that goes from"
+    print "2017-05-01 to 2017-05-07."
+    print "Trying to predict if, knowing the song and its artist, the"
+    print "song will occupy a position in the Irish Spotify's top 25"
+    print "in a certain day."
+    print ""
+    data = main_data[main_data['Region'] == 'ie'].copy()
+    data = data[(data['Date'] >= '2017-04-01') & (data['Date'] <= '2017-05-07')]
+    data = initialize_dataset(data, 'ie')
+    train = data[data['Date'] < 30]
+    test = data[data['Date'] >= 30]
+    pred = topsongs(train, test, 25, 0)
+    real_y = test[datasetinfo.POSITION_COLUMN] <= 25
+    scores = utils.compute_classification_scores(real_y, pred)
+    print "Scores for this prediction:"
+    print "Accuracy:  {}".format(scores[0])
+    print "Precision: {}".format(scores[1])
+    print "Recall:    {}".format(scores[2])
+    print ""
+    print ""
+    print ""
+
+
+    print "********** PREDICTION OF THE TOP 3 IN EUROPE **********"
+    print "Description:"
+    print "The training set is a sampled 75% of the original dataset."
+    print "The test set is the remaining 25%."
+    print "Trying to predict if, knowing the song and its artist, the"
+    print "song will occupy a position in the Euro Spotify's top 3 in"
+    print "a certain day."
+    print ""
+    # Get the relevand part of the dataset
+    regions = ['al', 'at', 'be', 'bg', 'ch', 'cz', 'de', 'dk', 'es',
+               'fi', 'fr', 'gb', 'gr', 'hr', 'hu', 'ie', 'is', 'it',
+               'lt', 'lu', 'lv', 'mc', 'md', 'mk', 'mt', 'nl', 'no',
+               'pl', 'ro', 'rs', 'se', 'si', 'sk', 'sm', 'ua']
+    data = main_data[main_data['Region'].isin(regions)].copy()
+    data = initialize_dataset(data, regions)
+    # Split into train and test
+    train, test = utils.split_dataset_sample(data)
+    pred = topsongs(train, test, 3, 0) 
+    real_y = test[datasetinfo.POSITION_COLUMN] <= 3
+    scores = utils.compute_classification_scores(real_y, pred)
+    print "Scores for this prediction:"
+    print "Accuracy:  {}".format(scores[0])
+    print "Precision: {}".format(scores[1])
+    print "Recall:    {}".format(scores[2])
+    print ""
+    print ""
+    print ""
+
+
+    print "********** PREDICTION OF NEXT WEEK TOP 5 IN USA AND CANADA **********"
+    print "Description:"
+    print "The training set is the fraction of the dataset that goes"
+    print "from 2017-07-01 to 2017-07-31."
+    print "The test set is the fraction of the dataset that goes from"
+    print "2017-08-01 to 2017-08-07."
+    print "Trying to predict if, knowing the song and its artist, the"
+    print "song will occupy a position in the Spotify's top 5 in the"
+    print "USA and Canada in a certain day."
+    print ""
+    regions = ['us', 'ca']
+    data = main_data[main_data['Region'].isin(regions)].copy()
+    data = data[(data['Date'] >= '2017-07-01') & (data['Date'] <= '2017-08-07')]
+    data = initialize_dataset(data, regions)
+    train = data[data['Date'] < 31]
+    test = data[data['Date'] >= 31]
+    pred = topsongs(train, test, 5, 0)
+    real_y = test[datasetinfo.POSITION_COLUMN] <= 5
+    scores = utils.compute_classification_scores(real_y, pred)
+    print "Scores for this prediction:"
+    print "Accuracy:  {}".format(scores[0])
+    print "Precision: {}".format(scores[1])
+    print "Recall:    {}".format(scores[2])
+    print ""
+    print ""
+    print ""
+
+
+    print "********** PREDICT AUGUST ITALIAN TOP 25 FROM JUNE-JULY SPANISH TOP 25 **********"
+    print "Description:"
+    print "The training set is the fraction of the dataset for the"
+    print "Spanish region from 2017-06-01 to 2017-07-31."
+    print "The test set is the fraction of the dataset for the Italian"
+    print "region from 2017-08-01 to 2017-08-31."
+    print "Trying to predict if, knowing the song and its artist, the"
+    print "song will occupy a position in the Italian Spotify's top 25"
+    print "in a certain day."
+    regions = ['it', 'es']
+    data = main_data[main_data['Region'].isin(regions)].copy()
+    data = data[(data['Date'] >= '2017-06-01') & (data['Date'] <= '2017-08-31')]
+    itindex = data.index[(data['Region'] == 'it') & (data['Date'] >= '2017-08-01')]
+    esindex = data.index[(data['Region'] == 'es') & (data['Date'] <= '2017-07-31')]
+    data = initialize_dataset(data, regions)
+    train = data.loc[esindex]
+    test = data.loc[itindex]
+    pred = topsongs(train, test, 25, 0)
+    real_y = test[datasetinfo.POSITION_COLUMN] <= 25
+    scores = utils.compute_classification_scores(real_y, pred)
+    print "Scores for this prediction:"
+    print "Accuracy:  {}".format(scores[0])
+    print "Precision: {}".format(scores[1])
+    print "Recall:    {}".format(scores[2])
+    print ""
+    print ""
+    print ""
