@@ -49,7 +49,7 @@ def add_previous_streams(data, verbosity_level = 0):
     if verbosity_level > 0:
         print "Adding {} column...".format(STREAMSPRED_PREV_STREAMS)
     # Add the empty column
-    data[STREAMSPRED_PREV_STREAMS] = None
+    data[STREAMSPRED_PREV_STREAMS] = 0
     # Get the list of countries
     countries = data[datasetinfo.REGION_COLUMN].unique()
     for country in countries:
@@ -217,8 +217,9 @@ def streamsprediction_test():
     main_data = pd.read_csv(os.path.join(utils.DATA_DIRECTORY, utils.DATASET_NAME))
 
     # Get the relevand part of the dataset
-    data = main_data[main_data['Region'] == 'it'].copy()
-    data = initialize_dataset(data, 'it', verbosity_level = 2)
+    regions = ['it']
+    data = main_data[main_data['Region'].isin(regions)].copy()
+    data = initialize_dataset(data, regions, verbosity_level = 2)
     # Split into train and test
     train, test = utils.split_dataset_sample(data)
     print "Starting computation..."
