@@ -11,11 +11,12 @@ https://www.kaggle.com/edumucelli/spotifys-worldwide-daily-song-ranking
 import pandas as pd
 import numpy as np
 from sklearn.tree import DecisionTreeClassifier
-from sklearn.avm import SVC
+from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier, AdaBoostClassifier
 from sklearn.metrics import accuracy_score, precision_score, recall_score
 import utils
 import datasetinfo as dsinfo
+import preprocessing as pp
 import os
 from customexceptions import *
 
@@ -76,7 +77,7 @@ class TopSongs(object):
                  classifier_type = 'dtree'):
         '''
         The initialization method creates the TopSongs object reading the dataset and
-        dropping the useless features (URL and Streams).
+        dropping the useless features (URL).
         The length of the top list top predict is set to the input parameter top_length
         and the classifier is set to the SciKit classifier identified by the input
         parameter classifier_type.
@@ -86,6 +87,10 @@ class TopSongs(object):
         'dtree' for DecisionTreeClassifier.
         Notice that the training and the test sets are initialized to None. The only way to
         set them is to call the methods 'initialize_train_test()'.
+        The initialization method also initialize to None the target dataset to predict.
+        Remember to set the prediction dataset before calling the 'fit_classifier()'
+        method, because the label encoding for fitting is performed on the union of the
+        training, test and prediction dataset
         '''
         super(TopSongs, self).__init__()
         # Setting the top length
@@ -95,12 +100,24 @@ class TopSongs(object):
         self.set_classifier(classifier_type)
         # Reading the dataset
         self.dataset = pd.read_csv(ds_name)
-        # Drop URL and Streams
-        drop_columns = [dsinfo.URL_COLUMN, dsinfo.STREAMS_COLUMN]
+        # Drop URL
+        drop_columns = [dsinfo.URL_COLUMN]
         self.dataset.drop(columns = drop_columns, inplace = True)
-        # Initialize train and test
+        # Drop all rows containing NaNs
+        for col in set(self.dataset.columns):
+            self.dataset = self.dataset[~self.dataset[col].isna()]
+        # Initialize train, test and prediction
         self.train = None
         self.test = None
+        self.prediction = None
+        # Initialize the encoded version of the training, test and predition dataset
+        self.enc_train = None
+        self.enc_test = None
+        self.enc_prediction = None
+        # Initialize accuracy, precision and recall
+        self.accuracy = 0
+        self.precision = 0
+        self.recall = 0
 
     def filter_date(self, date_lte, date_gte, target = 'dataset'):
         '''
@@ -131,6 +148,48 @@ class TopSongs(object):
         # Apply the filter
         ds = ds[ds[dsinfo.DATE_COLUMN] <= date_gte]
         ds = ds[ds[dsinfo.DATE_COLUMN] >= date_lte]
+        if target.lower() == 'dataset':
+            self.dataset = ds
+        elif target.lower() == 'train':
+            self.train = ds
+        elif target.lower() == 'test':
+            self.test = ds
+
+    def filter_streams(self, streams_lte, streams_gte, target = 'dataset'):
+        '''
+        This method applies a streams range filter to the target dataset.
+        The filter is applied dropping every row that it's not in the streams range defined
+        by the input parameters streams_lte and streams_gte.
+        If the target dataset is 'train' or 'test' and the corresponding dataset is not
+        yet initialized, then the method raises a NoneReferenceException.
+        If the target is not one of 'dataset', 'target' or 'train', then the method raises
+        a InvalidTypeException.
+        '''
+        # Get the reference to the right dataset
+        ds = None
+        if target.lower() == 'dataset':
+            ds = self.dataset
+        elif target.lower() == 'train':
+            ds = self.train
+        elif target.lower() == 'test':
+            ds = self.test
+        else:
+            errstring = "The type {} is not allowed.".format(classifier_type.lower())
+            raise InvalidTypeException(errstring)
+        # Check if the dataset has been initialized
+        if ds is None:
+            ds_typename = "training" if target.lower() == 'train' else "test"
+            errstring = "The {} set has not yet been initialized.".format(ds_typename)
+            raise NoneReferenceException(errstring)
+        # Apply the filter
+        ds = ds[ds[dsinfo.STREAMS_COLUMN] <= streams_gte]
+        ds = ds[ds[dsinfo.STREAMS_COLUMN] >= streams_lte]
+        if target.lower() == 'dataset':
+            self.dataset = ds
+        elif target.lower() == 'train':
+            self.train = ds
+        elif target.lower() == 'test':
+            self.test = ds
     
     def filter_artist(self, artists, target = 'dataset'):
         '''
@@ -168,6 +227,12 @@ class TopSongs(object):
                     lartists = list(artists)
         # Apply the filter
         ds = ds[ds[dsinfo.ARTIST_COLUMN].isin(lartists)]
+        if target.lower() == 'dataset':
+            self.dataset = ds
+        elif target.lower() == 'train':
+            self.train = ds
+        elif target.lower() == 'test':
+            self.test = ds
     
     def filter_track(self, tracks, target = 'dataset'):
         '''
@@ -195,7 +260,7 @@ class TopSongs(object):
             ds_typename = "training" if target.lower() == 'train' else "test"
             errstring = "The {} set has not yet been initialized.".format(ds_typename)
             raise NoneReferenceException(errstring)
-        # Check if the given artist is a string or a collection
+        # Check if the given track name is a string or a collection
         ltracks = None
         if isinstance(tracks, str):
             ltracks = [tracks]
@@ -205,7 +270,204 @@ class TopSongs(object):
                     ltracks = list(tracks)
         # Apply the filter
         ds = ds[ds[dsinfo.TRACKNAME_COLUMN].isin(ltracks)]
+        if target.lower() == 'dataset':
+            self.dataset = ds
+        elif target.lower() == 'train':
+            self.train = ds
+        elif target.lower() == 'test':
+            self.test = ds
+    
+    def filter_region(self, regions, target = 'dataset'):
+        '''
+        This applies a tracks filter to the target dataset.
+        The filter is applied dropping every row whose the region is not in the given
+        list of region codes.
+        If the target dataset is 'train' or 'test' and the corresponding dataset is not
+        yet initialized, then the method raises a NoneReferenceException.
+        If the target is not one of 'dataset', 'target' or 'train', then the method raises
+        a InvalidTypeException.
+        '''
+        # Get the reference to the right dataset
+        ds = None
+        if target.lower() == 'dataset':
+            ds = self.dataset
+        elif target.lower() == 'train':
+            ds = self.train
+        elif target.lower() == 'test':
+            ds = self.test
+        else:
+            errstring = "The type {} is not allowed.".format(classifier_type.lower())
+            raise InvalidTypeException(errstring)
+        # Check if the dataset has been initialized
+        if ds is None:
+            ds_typename = "training" if target.lower() == 'train' else "test"
+            errstring = "The {} set has not yet been initialized.".format(ds_typename)
+            raise NoneReferenceException(errstring)
+        # Check if the given region is a string or a collection
+        lregions = None
+        if isinstance(regions, str):
+            lregions = [regions]
+        else:
+            for collecttype in [list, set, tuple]:
+                if isinstance(regions, collecttype):
+                    lregions = list(regions)
+        # Apply the filter
+        ds = ds[ds[dsinfo.REGION_COLUMN].isin(lregions)]
+        if target.lower() == 'dataset':
+            self.dataset = ds
+        elif target.lower() == 'train':
+            self.train = ds
+        elif target.lower() == 'test':
+            self.test = ds
+    
+    def initialize_train_test(self, train_ratio = 0.75, sample = True, full = False):
+        '''
+        This function initializes the training and the test sets.
+        The training set is initialized to a fraction of the original dataset given by
+        the input parameter train_ratio, while the test set will be initialized to the
+        remaining part of the original dataset. Notice that the training and the test
+        sets are copies of the original dataset, so every changes made on those datasets
+        will not affect the original one. The default value for the parameter train_ratio
+        is 0.75.
+        If the input parameter sample is True, then the training set is built sampling
+        rows from the original dataset. Otherwise, it is built taking the first part of
+        the dataset. Default value for sample is True.
+        If the input parameter full is True, then the values of the other parameters are
+        ignored and both the training and the test sets are initialized to be exact
+        copies of the full original one.
+        '''
+        if full:
+            self.train  = self.dataset.copy()
+            self.test   = self.dataset.copy()
+        else:
+            if sample:
+                self.train, self.test = utils.split_dataset_sample(self.dataset, train_ratio)
+            else:
+                self.train, self.test = utils.split_dataset(self.dataset, train_ratio)
 
+    def set_prediction_set(self, prediction_set):
+        '''
+        This method sets the prediction set to the given one.
+        The type of the given prediction set must be convertible to a pandas DataFrame,
+        or this method will raise an InvalidTypeException.
+        '''
+        try:
+            self.prediction = pd.DataFrame(prediction_set)
+        except:
+            errstring = "Prediction set must be convertible to a pandas DataFrame."
+            raise InvalidTypeException(errstring)
+        # Change the indexes in order to keep them out of the range of the training
+        # and test sets
+        maxindex = np.max([np.max(self.train.index), np.max(self.test.index)])
+        self.prediction.index = self.prediction.index + maxindex + 1
+    
+    def fit_classifier(self):
+        '''
+        This method fits the classifier used for prediction.
+        The fitting procedure consists in the encoding of the columns of a dataset that is
+        formed by the union of the training, the test and the prediction sets. Then, the
+        classifier associated to this object is fitted using the training set.
+        Notice that, in order to maintain consistency between the fitting and the
+        prediction procedures, the elements of the columns are ordered, before the encoding
+        procedure, according to their natural ordering.
+        If the classifier associated with this object is None, then this method raises an
+        UndefinedClassifierException.
+        If the training set is None, then this method raises a NoneReferenceException.
+        '''
+        # Check if classifier is None
+        if self.clf is None:
+            raise UndefinedClassifierException("Cannot fit a None classifier.")
+        # Check if training set is defined
+        if self.train is None:
+            raise NoneReferenceException("The training set is None.")
+        # Get the union of the datasets
+        union = pd.DataFrame(self.train)
+        if self.test is not None:
+            union = union.append(self.test)
+        if self.prediction is not None:
+            union = union.append(self.prediction)
+        pp.encode_dates(union, True)
+        pp.encode_artists(union, True)
+        pp.encode_tracks(union, True)
+        # The training set is the subset of union whose the indices are those contained
+        # in self.train
+        # The same holds for test and prediction, if they are not None
+        self.enc_train = union[union.index.isin(self.train.index)]
+        if self.test is not None:
+            self.enc_test = union[union.index.isin(self.test.index)]
+        if self.prediction is not None:
+            self.enc_prediction = union[union.index.isin(self.prediction.index)]
+        # Now, fit the classifier
+        features = list(set(self.enc_train.columns) - set(dsinfo.POSITION_COLUMN))
+        features = list(set(features) - set([dsinfo.REGION_COLUMN]))
+        features = list(set(features) - set([dsinfo.STREAMS_COLUMN]))
+        enc_train_x = self.enc_train[features]
+        enc_train_y = self.enc_train[dsinfo.POSITION_COLUMN] <= self.top_length
+        self.clf.fit(enc_train_x, enc_train_y)
+
+    def compute_prediction(self, target = 'prediction'):
+        '''
+        This method computes the prediction for the target dataset.
+        The allowed target types are:
+            - 'prediction' for the target prediction dataset
+            - 'test' for the test set
+        Default is 'prediction'.
+        The computed prediction is then returned.
+        '''
+        # Get the target dataset
+        ds = None
+        if target.lower() == 'prediction':
+            ds = self.enc_prediction
+        elif target.lower() == 'test':
+            ds = self.enc_test
+        else:
+            raise InvalidTypeException("{} is not a valid type.".format(target.lower()))
+        # If target is None, raise exception
+        if ds is None:
+            raise NoneReferenceException("Cannot predit a None dataset.")
+        # Get the features and the target subsets
+        features = list(set(ds.columns) - set(dsinfo.POSITION_COLUMN))
+        features = list(set(features) - set([dsinfo.REGION_COLUMN]))
+        features = list(set(features) - set([dsinfo.STREAMS_COLUMN]))
+        X = ds[features]
+        # Compute the prediction and return it
+        return self.clf.predict(X)
+    
+    def test_classifier(self):
+        '''
+        This method tests the prediction computed by the classifier on the training set.
+        The test is computed applying the prediction to the test set and then computing
+        accuracy, precision and recall scores.
+        '''
+        # Get the test Y
+        test_y = self.test[dsinfo.POSITION_COLUMN] <= self.top_length
+        # Compute the test prediction
+        pred = self.compute_prediction('test')
+        # Compute the scores
+        self.accuracy = accuracy_score(test_y, pred)
+        self.precision = precision_score(test_y, pred)
+        self.recall = recall_score(test_y, pred)
+
+
+def test_topsongs():
+    '''
+    This function is used to test the "Top Songs" feature.
+    '''
+    print "Computing the top 5 in Italy in May using January."
+    ts = TopSongs(top_length=5)
+    print "Class created"
+    ts.filter_region('it')
+    print "Regions filtered"
+    ts.initialize_train_test(full=True)
+    print "Successfully splitted the dataset"
+    ts.filter_date('2017-01-01', '2017-01-31', 'train')
+    ts.filter_date('2017-05-01', '2017-05-31', 'test')
+    ts.fit_classifier()
+    print "Classifier fitted"
+    ts.test_classifier()
+    print "Accuracy:   {}".format(ts.accuracy)
+    print "Precision:  {}".format(ts.precision)
+    print "Recall:     {}".format(ts.recall)
 
 
 

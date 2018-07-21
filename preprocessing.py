@@ -43,8 +43,13 @@ def label_encode(dataset, columns = None, inplace = False):
         cols = list(columns)
     # For each column, apply the label encoding
     for col in cols:
+        # Remember to order the values before to applying the encoding, so that
+        # this kind of order is represented by the encoding
+        vals = ds[col].unique()
+        vals.sort()
         le = LabelEncoder()
-        ds[col] = le.fit_transform(ds[col])
+        le.fit(vals)
+        ds[col] = le.transform(ds[col])
     # Return the encoded dataset
     return ds
 
@@ -73,7 +78,7 @@ def binary_encode(dataset, columns = None, inplace = False):
     cols = None
     if isinstance(columns, str):
         cols = [columns]
-    elif columsn is None:
+    elif columns is None:
         cols = list()
         for col in list(ds.columns):
             if ds[col].dtype == 'object':
@@ -84,7 +89,7 @@ def binary_encode(dataset, columns = None, inplace = False):
     for col in cols:
         newcol = encoder.binarizer(ds[col], prefix = col[:int(np.min([3, len(col)]))])
         newcol.index = ds.index
-        ds = ds.drop(columns = [col])
+        ds.drop(columns = [col], inplace = True)
         for ncol in list(newcol.columns):
             ds[ncol] = newcol[ncol]
     # Return the encoded dataset

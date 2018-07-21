@@ -19,3 +19,12 @@ class NoneReferenceException(Exception):
 
     def __init__(self, errstring):
         super(NoneReferenceException, self).__init__(errstring)
+
+class UndefinedClassifierException(Exception):
+    '''
+    This exception is raised when a method or a function tries to fit a classifier that is
+    None or tries to predict with a classifier that is None.
+    '''
+
+    def __init__(self, errstring):
+        super(UndefinedClassifierException, self).__init__(errstring)

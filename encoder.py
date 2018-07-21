@@ -87,8 +87,12 @@ def binarizer(series, prefix = None, suffix = None):
         raise TypeError("The input suffix must be a string or None.")
     lsuffix = str(lsuffix)
     # Label encode the series
+    # Sort the values according to their natural ordering
     le = LabelEncoder()
-    lseries = pd.Series(le.fit_transform(lseries))
+    vals = lseries.unique()
+    vals.sort()
+    le.fit(vals)
+    lseries = pd.Series(le.transform(lseries))
     # Compute the length
     length = int(np.max([1, np.ceil(np.log2(lseries.max()))]))
     # Create the dataframe from the series of array
