@@ -43,3 +43,9 @@ STREAMS_COLUMN = "Streams"
 This string represents the name of the column containing the song's streams count in the
 dataset. It can be supplied by the user. Default value is "URL".
 '''
+PREVSTREAMS_COLUMN = "Previous Streams"
+'''
+This string represents the name of the column containing the song's streams count in the
+last day when it has scored a position in the top 200 for the same country.
+It can be supplied by the user. Default value is "URL".
+'''

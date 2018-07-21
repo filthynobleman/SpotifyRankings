@@ -19,9 +19,11 @@ import utils, preprocessing
 # pred = clf.predict(test[features])
 # print (pred == test[target]).sum() / float(len(pred))
 
-ds = pd.read_csv("data.csv")
-ds = ds[ds['Date'] == '2018-01-01']
-print "Readed"
-ds = preprocessing.binary_encode(ds, 'Region', True)
-print list(ds.columns)
-print ds.head()
+# ds = pd.read_csv("data.csv")
+# ds = ds[ds['Region'] == 'gb']
+# print "Readed"
+# ds = preprocessing.encode_dates(ds, True)
+# ds = preprocessing.encode_artists(ds, True)
+# print list(ds.columns)
+# print ds[['Date', 'Art0', 'Art1', 'Art2', 'Art3', 'Art4', 'Art5', 'Art6', 'Art7', 'Art8', 'Art9', 'Position']]
+        

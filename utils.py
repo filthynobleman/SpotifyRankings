@@ -23,6 +23,7 @@ DATASET_NAME = "data.csv"
 This string represents the base name of the filename containing the dataset.
 It can be supplied by the user. Default value is "data.csv".
 '''
+DATASET_FILE = os.path.join(DATA_DIRECTORY, DATASET_NAME)
 
 def read_dataset(verbosity_level = 0):
     '''
