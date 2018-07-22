@@ -398,11 +398,11 @@ class TopSongs(object):
         if self.prediction is not None:
             self.enc_prediction = union[union.index.isin(self.prediction.index)]
         # Now, fit the classifier
-        features = list(set(self.enc_train.columns) - set(dsinfo.POSITION_COLUMN))
+        features = list(set(self.enc_train.columns) - set([dsinfo.POSITION_COLUMN]))
         features = list(set(features) - set([dsinfo.REGION_COLUMN]))
         features = list(set(features) - set([dsinfo.STREAMS_COLUMN]))
         enc_train_x = self.enc_train[features]
-        enc_train_y = self.enc_train[dsinfo.POSITION_COLUMN] <= self.top_length
+        enc_train_y = self.train[dsinfo.POSITION_COLUMN] <= self.top_length
         self.clf.fit(enc_train_x, enc_train_y)
 
     def compute_prediction(self, target = 'prediction'):
@@ -426,7 +426,7 @@ class TopSongs(object):
         if ds is None:
             raise NoneReferenceException("Cannot predit a None dataset.")
         # Get the features and the target subsets
-        features = list(set(ds.columns) - set(dsinfo.POSITION_COLUMN))
+        features = list(set(ds.columns) - set([dsinfo.POSITION_COLUMN]))
         features = list(set(features) - set([dsinfo.REGION_COLUMN]))
         features = list(set(features) - set([dsinfo.STREAMS_COLUMN]))
         X = ds[features]
@@ -453,15 +453,13 @@ def test_topsongs():
     '''
     This function is used to test the "Top Songs" feature.
     '''
-    print "Computing the top 5 in Italy in May using January."
-    ts = TopSongs(top_length=5)
+    print "Computing the top 10 in Italy."
+    ts = TopSongs()
     print "Class created"
     ts.filter_region('it')
     print "Regions filtered"
-    ts.initialize_train_test(full=True)
+    ts.initialize_train_test()
     print "Successfully splitted the dataset"
-    ts.filter_date('2017-01-01', '2017-01-31', 'train')
-    ts.filter_date('2017-05-01', '2017-05-31', 'test')
     ts.fit_classifier()
     print "Classifier fitted"
     ts.test_classifier()
