@@ -448,6 +448,63 @@ class TopSongs(object):
         self.precision = precision_score(test_y, pred)
         self.recall = recall_score(test_y, pred)
 
+def test_one(ts):
+    '''
+    This function tests a single TopSongs object over the different classifiers.
+    '''
+    from time import time
+    print "Fitting a decision tree classifier..."
+    ts.set_classifier('dtree')
+    fit_start = time()
+    ts.fit_classifier()
+    fit_end = time() - fit_start
+    class_start = time()
+    ts.test_classifier()
+    class_end = time() - class_start
+    print "    Encode and fit: {} s".format(fit_end)
+    print "    Classification: {} s".format(class_end)
+    print "    Accuracy:       {}".format(ts.accuracy)
+    print "    Precision:      {}".format(ts.precision)
+    print "    Recall:         {}".format(ts.recall)
+    print "Fitting a random forest classifier..."
+    ts.set_classifier('randforest')
+    fit_start = time()
+    ts.fit_classifier()
+    fit_end = time() - fit_start
+    class_start = time()
+    ts.test_classifier()
+    class_end = time() - class_start
+    print "    Encode and fit: {} s".format(fit_end)
+    print "    Classification: {} s".format(class_end)
+    print "    Accuracy:       {}".format(ts.accuracy)
+    print "    Precision:      {}".format(ts.precision)
+    print "    Recall:         {}".format(ts.recall)
+    print "Fitting an ada boost classifier..."
+    ts.set_classifier('adaboost')
+    fit_start = time()
+    ts.fit_classifier()
+    fit_end = time() - fit_start
+    class_start = time()
+    ts.test_classifier()
+    class_end = time() - class_start
+    print "    Encode and fit: {} s".format(fit_end)
+    print "    Classification: {} s".format(class_end)
+    print "    Accuracy:       {}".format(ts.accuracy)
+    print "    Precision:      {}".format(ts.precision)
+    print "    Recall:         {}".format(ts.recall)
+    print "Fitting a support vector classifier..."
+    ts.set_classifier('svc')
+    fit_start = time()
+    ts.fit_classifier()
+    fit_end = time() - fit_start
+    class_start = time()
+    ts.test_classifier()
+    class_end = time() - class_start
+    print "    Encode and fit: {} s".format(fit_end)
+    print "    Classification: {} s".format(class_end)
+    print "    Accuracy:       {}".format(ts.accuracy)
+    print "    Precision:      {}".format(ts.precision)
+    print "    Recall:         {}".format(ts.recall)
 
 def test_topsongs():
     '''
@@ -455,17 +512,12 @@ def test_topsongs():
     '''
     print "Computing the top 10 in Italy."
     ts = TopSongs()
-    print "Class created"
+    print "Considering only 'it' region..."
     ts.filter_region('it')
-    print "Regions filtered"
+    print "Initializing the training and the test sets as a sample of the dataset..."
+    print "Training fraction is 75% of the dataset."
     ts.initialize_train_test()
-    print "Successfully splitted the dataset"
-    ts.fit_classifier()
-    print "Classifier fitted"
-    ts.test_classifier()
-    print "Accuracy:   {}".format(ts.accuracy)
-    print "Precision:  {}".format(ts.precision)
-    print "Recall:     {}".format(ts.recall)
+    test_one(ts)
 
 
 
