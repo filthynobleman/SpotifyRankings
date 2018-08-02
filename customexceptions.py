@@ -20,20 +20,30 @@ class NoneReferenceException(Exception):
     def __init__(self, errstring):
         super(NoneReferenceException, self).__init__(errstring)
 
-class UndefinedClassifierException(Exception):
+class UndefinedPredictorException(Exception):
     '''
-    This exception is raised when a method or a function tries to fit a classifier that is
-    None or tries to predict with a classifier that is None.
-    '''
-
-    def __init__(self, errstring):
-        super(UndefinedClassifierException, self).__init__(errstring)
-
-class UndefinedRegressorException(Exception):
-    '''
-    This exception is raised when a method or a function tries to fit a regressor that is
-    None or tries to predict with a regressor that is None.
+    This exception is raised when a method or a function tries to fit a predictor that is
+    None or tries to predict with a predictor that is None.
     '''
 
     def __init__(self, errstring):
-        super(UndefinedRegressorException, self).__init__(errstring)
+        super(UndefinedPredictorException, self).__init__(errstring)
+
+class UndefinedDatasetException(Exception):
+    '''
+    This exception is raised when a method or a function tries to interact with an undefined
+    dataset.
+    '''
+
+    def __init__(self, errstring):
+        super(UndefinedDatasetException, self).__init__(errstring)
+
+class EncodingNotUpToDateException(Exception):
+    '''
+    This exception is raised when a method or a function tries to operate with an encoded
+    dataset that is None or whose the rows does not match those of the original dataset.
+    '''
+
+    def __init__(self, errstring):
+        super(EncodingNotUpToDateException, self).__init__(errstring)
+        

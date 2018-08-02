@@ -186,6 +186,7 @@ from streamsprediction import TodayStreams
 
 ts = TodayStreams(backend_predictor='randforest')
 ts.filter_region('it')
+ts.add_previous_streams()
 ts.initialize_train_test()
 ts.encode_train_and_test()
 ts.fit()

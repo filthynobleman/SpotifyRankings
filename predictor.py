@@ -108,7 +108,9 @@ class Predictor(object):
             try:
                 self.dataset = pd.read_csv(datafile)
             except:
-                pass # TODO raise exception as defined in docstring
+                errstring = "The given dataset is None and it is impossible to retrieve "
+                errstring += "any data from file {}.".format(datafile)
+                raise UndefinedDatasetException(errstring)
         # Otherwise, copy the given dataset
         else:
             if not isinstance(data, pd.DataFrame):
@@ -366,11 +368,9 @@ class Predictor(object):
         UndefinedPredictorException.
         '''
         if self.enc_train is None or (self.enc_train.index != self.train.index).any():
-            pass # TODO raise the proper exception as defined in documentation
+            raise EncodingNotUpToDateException("The encoded training set is not up to date.")
         if self.clf is None:
-            pass # TODO raise the proper exception as defined in documentation
-        print self.features
-        print train_x.columns
+            raise UndefinedPredictorException("The predictor to use is undefined.")
         train_x = self.enc_train[self.features]
         train_y = self.enc_train[self.label]
         self.clf.fit(train_x, train_y)
@@ -396,7 +396,7 @@ class Predictor(object):
         method raises a EncodingNotUpToDateException.
         '''
         if self.enc_test is None or (self.enc_test.index != self.test.index).any():
-            pass # TODO raise the proper exception as defined in documentation
+            raise EncodingNotUpToDateException("The encoded test set is not up to date.")
         self.fit()
         return self.predict(self.enc_test[self.features])
     
