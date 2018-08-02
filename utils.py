@@ -220,6 +220,6 @@ def compute_r_squared(y_true, pred):
         A*  = SUM_{i = 1}^{n} (A_i / n)
     '''
     y_mean = y_true.mean()
-    ess = ((pred - y_mean)**2).sum()
+    rss = ((pred - y_true)**2).sum()
     tss = ((y_true - y_mean)**2).sum()
-    return ess / tss
+    return 1 - (rss / tss)

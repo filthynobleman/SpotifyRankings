@@ -41,11 +41,17 @@ It can be supplied by the user. Default value is "URL".
 STREAMS_COLUMN = "Streams"
 '''
 This string represents the name of the column containing the song's streams count in the
-dataset. It can be supplied by the user. Default value is "URL".
+dataset. It can be supplied by the user. Default value is "Streams".
 '''
 PREVSTREAMS_COLUMN = "Previous Streams"
 '''
 This string represents the name of the column containing the song's streams count in the
 last day when it has scored a position in the top 200 for the same country.
-It can be supplied by the user. Default value is "URL".
+It can be supplied by the user. Default value is "Previous Streams".
+'''
+ISINTOP_COLUMN = "Is In Top"
+'''
+This string represents the name of the column containing the boolean value that describe if
+the track of the artist in that day was in the top list of the tracks for the country.
+It can be supplied by the user. Default value is "Is In Top".
 '''

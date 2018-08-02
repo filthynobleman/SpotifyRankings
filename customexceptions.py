@@ -28,3 +28,12 @@ class UndefinedClassifierException(Exception):
 
     def __init__(self, errstring):
         super(UndefinedClassifierException, self).__init__(errstring)
+
+class UndefinedRegressorException(Exception):
+    '''
+    This exception is raised when a method or a function tries to fit a regressor that is
+    None or tries to predict with a regressor that is None.
+    '''
+
+    def __init__(self, errstring):
+        super(UndefinedRegressorException, self).__init__(errstring)
