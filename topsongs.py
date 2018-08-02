@@ -52,7 +52,7 @@ class TopSongs(Predictor):
         Furthermore, the constructor initialzes the features' set and the label to defined
         values, adding to the dataset the new target column 'Is In Top'.
         '''
-        super(TopSongs, self).__init__(data, datefile, backend_predictor, 'classification')
+        super(TopSongs, self).__init__(data, datafile, backend_predictor, 'classification')
         # Setting the top length
         self.top_length = top_length
         # Initialize accuracy, precision and recall

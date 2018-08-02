@@ -14,9 +14,10 @@ from sklearn.svm import SVC, SVR
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.ensemble import AdaBoostClassifier, AdaBoostRegressor
 from customexceptions import *
+from abc import abstractmethod
 
 
-class Predictor(Object):
+class Predictor(object):
     '''
     This is the base class for every predictor in the project.
     The base class initializes the properties commons to every predictor, such as the
@@ -363,12 +364,12 @@ class Predictor(Object):
         If the backend predictor is None, then the method raises an
         UndefinedPredictorException.
         '''
-        if self.enc_train is None or self.enc_train.index != self.train.index:
+        if self.enc_train is None or (self.enc_train.index != self.train.index).any():
             pass # TODO raise the proper exception as defined in documentation
         if self.clf is None:
             pass # TODO raise the proper exception as defined in documentation
-        train_x = self.train[self.features]
-        train_y = self.train[self.label]
+        train_x = self.enc_train[self.features]
+        train_y = self.enc_train[self.label]
         self.clf.fit(train_x, train_y)
     
     def predict(self, set_x):
@@ -391,7 +392,7 @@ class Predictor(Object):
         If the encoded test set is not updated to the current test set or it is None, the the
         method raises a EncodingNotUpToDateException.
         '''
-        if self.enc_test is None or self.enc_test.index != self.test.index:
+        if self.enc_test is None or (self.enc_test.index != self.test.index).any():
             pass # TODO raise the proper exception as defined in documentation
         self.fit()
         return self.predict(self.enc_test[self.features])
@@ -426,6 +427,7 @@ class Predictor(Object):
         self.features -= set([dsinfo.POSITION_COLUMN])
         self.features -= set([dsinfo.REGION_COLUMN])
         self.features -= set([dsinfo.STREAMS_COLUMN])
+        self.features -= set([dsinfo.ISINTOP_COLUMN])
         self.features = list(self.features)
         # Return the encoded dataset
         return union.loc[data.index,]

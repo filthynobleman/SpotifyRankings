@@ -158,8 +158,26 @@ def test_topsongs():
     with open("ie-vartop-datebased.json", "w") as fp:
         json.dump(tr.perf_history, fp, indent=4, sort_keys=True)
 
-    
 
 
+from topsongs import TopSongs
 
-test_topsongs()
+ts = TopSongs(top_length=5, backend_predictor='randforest')
+ts.filter_region('hk')
+months = ['January', 'February', 'March', 'April', 'June', 'May',
+          'July', 'August', 'September', 'October', 'November', 'December']
+for month in range(1, 13):
+    tr_lte = '2017-{:02d}-01'.format(month)
+    tr_gte = '2017-{:02d}-31'.format(month)
+    te_lte = '{}-{:02d}-01'.format('2017' if month < 12 else '2018', 1 if month == 12 else month + 1)
+    te_gte = '{}-{:02d}-07'.format('2017' if month < 12 else '2018', 1 if month == 12 else month + 1)
+    ts.initialize_train_test(full=True)
+    ts.filter_date(tr_lte, tr_gte, 'train')
+    ts.filter_date(te_lte, te_gte, 'test')
+    ts.encode_train_and_test()
+    ts.fit()
+    ts.test_prediction()
+    print "Predicting the first week of {} with training on the whole month of {}.".format(months[month % 12], months[month - 1])
+    print "    Accuracy:   {}".format(ts.accuracy)
+    print "    Precision:  {}".format(ts.precision)
+    print "    Recall:     {}".format(ts.recall)
