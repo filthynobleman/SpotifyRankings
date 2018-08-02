@@ -47,7 +47,7 @@ class TodayStreams(Predictor):
         Furthermore, the constructor initialzes the features' set and the label to defined
         values.
         '''
-        super(TodayStreams, self).__init__(data, datafile, backend_predictor)
+        super(TodayStreams, self).__init__(data, datafile, backend_predictor, 'regression')
         # Initialize the RMSE and the R squared
         self.rmse = float('inf')
         self.r_squared = 0

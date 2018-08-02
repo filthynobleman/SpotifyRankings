@@ -13,6 +13,7 @@ from sklearn.tree import DecisionTreeClassifier, DecisionTreeRegressor
 from sklearn.svm import SVC, SVR
 from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 from sklearn.ensemble import AdaBoostClassifier, AdaBoostRegressor
+from sklearn.neural_network import MLPClassifier, MLPRegressor
 from customexceptions import *
 from abc import abstractmethod
 
@@ -35,6 +36,7 @@ class Predictor(object):
             - 'randforest' for Random Forest
             - 'svc' for Support Vector 
             - 'adaboost' for AdaBoost
+            - 'neuralnet' for Multi-Layer Perceptron
         A predictor not in this list is invalid and it will raise an InvalidTypeException.
         Notice that the predictor name is case insensitive.
         Remember to fit again the predictor, once the method is executed, before it
@@ -61,6 +63,11 @@ class Predictor(object):
                 self.clf = AdaBoostClassifier()
             else:
                 self.clf = AdaBoostRegressor()
+        elif backend_predictor.lower() == 'neuralnet':
+            if self.pred_task == 'classification':
+                self.clf = MLPClassifier()
+            else:
+                self.clf = MLPRegressor()
         else:
             errstring = "The type {} is not allowed.".format(backend_predictor.lower())
             raise InvalidTypeException(errstring)
