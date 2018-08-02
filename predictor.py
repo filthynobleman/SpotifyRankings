@@ -127,6 +127,7 @@ class Predictor(object):
         # Initialize the list of features and the label for testing
         # They should be defined by the subclasses
         self.features = None
+        self.base_features = None
         self.label = None
 
     def filter_date(self, date_lte, date_gte, target = 'dataset'):
@@ -368,6 +369,8 @@ class Predictor(object):
             pass # TODO raise the proper exception as defined in documentation
         if self.clf is None:
             pass # TODO raise the proper exception as defined in documentation
+        print self.features
+        print train_x.columns
         train_x = self.enc_train[self.features]
         train_y = self.enc_train[self.label]
         self.clf.fit(train_x, train_y)
@@ -423,12 +426,14 @@ class Predictor(object):
         # Save the encoded training set
         self.enc_train = union.loc[self.train.index,]
         # Update the feature set
-        self.features = set(self.enc_train.columns)
-        self.features -= set([dsinfo.POSITION_COLUMN])
-        self.features -= set([dsinfo.REGION_COLUMN])
-        self.features -= set([dsinfo.STREAMS_COLUMN])
-        self.features -= set([dsinfo.ISINTOP_COLUMN])
-        self.features = list(self.features)
+        self.features = list(self.base_features) # Start from the base features
+        # Add any other feature that is the encoded version of artist or track name
+        for col in list(union.columns):
+            if dsinfo.TRACKNAME_COLUMN.startswith(col[:3]):
+                self.features.append(col)
+            if dsinfo.ARTIST_COLUMN.startswith(col[:3]):
+                self.features.append(col)
+
         # Return the encoded dataset
         return union.loc[data.index,]
     

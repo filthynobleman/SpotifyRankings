@@ -62,12 +62,7 @@ class TopSongs(Predictor):
         # Initialize features and label
         self.label = dsinfo.ISINTOP_COLUMN
         self.dataset[self.label] = self.dataset[dsinfo.POSITION_COLUMN] <= self.top_length
-        self.features = set(self.dataset.columns)
-        self.features -= set([dsinfo.POSITION_COLUMN])
-        self.features -= set([dsinfo.REGION_COLUMN])
-        self.features -= set([dsinfo.STREAMS_COLUMN])
-        self.features -= set([dsinfo.ISINTOP_COLUMN])
-        self.features = list(self.features)
+        self.base_features = [dsinfo.DATE_COLUMN]
     
     def set_top_length(self, top_length):
         '''
