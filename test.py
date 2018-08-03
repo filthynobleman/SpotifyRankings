@@ -160,35 +160,147 @@
 
 
 
-# from topsongs import TopSongs
 
-# ts = TopSongs(top_length=5, backend_predictor='randforest')
-# ts.filter_region('hk')
-# months = ['January', 'February', 'March', 'April', 'June', 'May',
-#           'July', 'August', 'September', 'October', 'November', 'December']
-# for month in range(1, 13):
-#     tr_lte = '2017-{:02d}-01'.format(month)
-#     tr_gte = '2017-{:02d}-31'.format(month)
-#     te_lte = '{}-{:02d}-01'.format('2017' if month < 12 else '2018', 1 if month == 12 else month + 1)
-#     te_gte = '{}-{:02d}-07'.format('2017' if month < 12 else '2018', 1 if month == 12 else month + 1)
-#     ts.initialize_train_test(full=True)
-#     ts.filter_date(tr_lte, tr_gte, 'train')
-#     ts.filter_date(te_lte, te_gte, 'test')
-#     ts.encode_train_and_test()
-#     ts.fit()
-#     ts.test_prediction()
-#     print "Predicting the first week of {} with training on the whole month of {}.".format(months[month % 12], months[month - 1])
-#     print "    Accuracy:   {}".format(ts.accuracy)
-#     print "    Precision:  {}".format(ts.precision)
-#     print "    Recall:     {}".format(ts.recall)
+import json
+import datetime as dt
+from topsongs import TopSongs
 
-from streamsprediction import TodayStreams
+regions = [ 'fr', 'it', 'us', 'de', 'jp', 'dk', 'pl', 'ca',
+            'es', 'cz', 'ie', 'nl', 'gb', 'global']
 
-ts = TodayStreams(backend_predictor='randforest')
-ts.filter_region('it')
-ts.add_previous_streams()
-ts.initialize_train_test()
-ts.encode_train_and_test()
-ts.fit()
-ts.test_prediction()
-print ts.rmse, ts.r_squared
+region_names = ['France', 'Italy', 'U.S.A.', 'Germany', 'Japan', 'Denmark', 'Poland',
+                'Canada', 'Spain', 'Czechia', 'Ireland', 'Netherlands', 'United Kingdom',
+                'Global']
+
+regnamedict = dict()
+for i in range(len(regions)):
+    regnamedict[regions[i]] = region_names[i]
+
+metrics = ['accuracy', 'precision', 'recall']
+
+months = ['January', 'February', 'March', 'April', 'June', 'May',
+          'July', 'August', 'September', 'October', 'November', 'December']
+
+results = dict()
+for reg in regions:
+    results[reg] = dict()
+    for month in range(1, 13):
+        results[reg][month] = dict()
+        for met in metrics:
+            results[reg][month][met] = None
+
+ts = TopSongs(backend_predictor='randforest', top_length=5)
+ts.filter_region(regions)
+for reg in regions:
+    print "Current region: {}.".format(regnamedict[reg])
+    for month in range(1, 13):
+        train_start = dt.date(2017, month, 1)
+        try:
+            train_end = dt.date(2017, month, 31)
+        except:
+            try:
+                train_end = dt.date(2017, month, 30)
+            except:
+                train_end = dt.date(2017, month, 28)
+        test_start = train_end + dt.timedelta(days=1)
+        test_end = test_start + dt.timedelta(days=6)
+        ts.initialize_train_test(full=True)
+        ts.filter_region(reg, 'train')
+        ts.filter_region(reg, 'test')
+        ts.filter_date(str(train_start), str(train_end), 'train')
+        ts.filter_date(str(test_start), str(test_end), 'test')
+        ts.encode_train_and_test()
+        try:
+            ts.fit()
+        except Exception as e:
+            print "    Cannot fit predictor with month {}.".format(months[month - 1])
+            print e.message
+            continue
+        try:
+            ts.test_prediction()
+        except:
+            print "    Cannot predict first week of {}.".format(months[month % 12])
+            continue
+        print "    Prediction between {} and {} gave results:".format(test_start, test_end)
+        print "        Accuracy:  {}".format(ts.accuracy)
+        print "        Precision: {}".format(ts.precision)
+        print "        Recall:    {}".format(ts.recall)
+        results[reg][month][metrics[0]] = ts.accuracy
+        results[reg][month][metrics[1]] = ts.precision
+        results[reg][month][metrics[2]] = ts.recall
+
+with open("top5-randforest.json", "w") as fp:
+    json.dump(results, fp, indent=4, sort_keys=True)
+
+print ""
+print "Results saved on disk."
+print "\n"
+
+maxreg = 0
+minreg = 0
+for i in range(1, len(regions)):
+    if results[regions[maxreg]][5][metrics[1]] < results[regions[i]][5][metrics[1]]:
+        maxreg = i
+    if results[regions[minreg]][5][metrics[1]] > results[regions[i]][5][metrics[1]]:
+        minreg = i
+
+
+print "Variation of the training set on the region with better precision results."
+print "Region is {}".format(regnamedict[regions[maxreg]])
+resmax = dist()
+numweek = 0
+test_start = dt.date(2017, 6, 1)
+test_end = dt.date(2017, 6, 7)
+train_end = dt.date(2017, 5, 31)
+train_start = train_end
+while (train_start - dt.timedelta(days=14)).year == 2017:
+    train_start = train_start - dt.timedelta(days=14)
+    numweek += 2
+    ts.initialize_train_test(full=True)
+    ts.filter_region(regions[maxreg], 'train')
+    ts.filter_region(regions[maxreg], 'test')
+    ts.filter_date(str(train_start), str(train_end), 'train')
+    ts.filter_date(str(test_start), str(test_end), 'test')
+    ts.encode_train_and_test()
+    ts.fit()
+    ts.test_prediction()
+    resmax[numweek] = (ts.accuracy, ts.precision, ts.recall)
+
+with open("top5-max-vartrain.json", "w") as fp:
+    json.dump(resmax, fp, indent=4, sort_keys=True)
+
+print "Variation of the training set on the region with lower precision results."
+print "Region is {}".format(regnamedict[regions[minreg]])
+resmin = dist()
+numweek = 0
+test_start = dt.date(2017, 6, 1)
+test_end = dt.date(2017, 6, 7)
+train_end = dt.date(2017, 5, 31)
+train_start = train_end
+while (train_start - dt.timedelta(days=14)).year == 2017:
+    train_start = train_start - dt.timedelta(days=14)
+    numweek += 2
+    ts.initialize_train_test(full=True)
+    ts.filter_region(regions[minreg], 'train')
+    ts.filter_region(regions[minreg], 'test')
+    ts.filter_date(str(train_start), str(train_end), 'train')
+    ts.filter_date(str(test_start), str(test_end), 'test')
+    ts.encode_train_and_test()
+    ts.fit()
+    ts.test_prediction()
+    resmin[numweek] = (ts.accuracy, ts.precision, ts.recall)
+
+with open("top5-min-vartrain.json", "w") as fp:
+    json.dump(resmin, fp, indent=4, sort_keys=True)
+
+
+# from streamsprediction import TodayStreams
+
+# ts = TodayStreams(backend_predictor='randforest')
+# ts.filter_region('it')
+# ts.add_previous_streams()
+# ts.initialize_train_test()
+# ts.encode_train_and_test()
+# ts.fit()
+# ts.test_prediction()
+# print ts.rmse, ts.r_squared
