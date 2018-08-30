@@ -12,6 +12,7 @@ import numpy as np
 import os
 from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import accuracy_score, precision_score, recall_score
+from sklearn.metrics import r2_score
 
 DATA_DIRECTORY = "."
 '''
@@ -219,7 +220,4 @@ def compute_r_squared(y_true, pred):
         TSS = SUM_{i = 1}^{n} (A_i - A*)^2
         A*  = SUM_{i = 1}^{n} (A_i / n)
     '''
-    y_mean = y_true.mean()
-    rss = ((pred - y_true)**2).sum()
-    tss = ((y_true - y_mean)**2).sum()
-    return 1 - (rss / tss)
+    return r2_score(y_true, pred)

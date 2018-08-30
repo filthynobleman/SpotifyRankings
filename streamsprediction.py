@@ -12,6 +12,7 @@ from predictor import *
 import utils
 import datasetinfo as dsinfo
 import preprocessing as pp
+import numpy as np
 import os, sys
 
 class TodayStreams(Predictor):
@@ -54,6 +55,13 @@ class TodayStreams(Predictor):
         # Initialize features and label
         self.label = dsinfo.STREAMS_COLUMN
         self.base_features = [dsinfo.DATE_COLUMN, dsinfo.PREVSTREAMS_COLUMN]
+
+    def log_scale_streams(self):
+        '''
+        This methods applies the logarithmic scaling to the number of streams in the dataset.
+        The scale is applied transforming each number of streams x into ln(x + 1).
+        '''
+        self.dataset[dsinfo.STREAMS_COLUMN] = np.log1p(self.dataset[dsinfo.STREAMS_COLUMN])
     
     def add_previous_streams(self):
         '''
