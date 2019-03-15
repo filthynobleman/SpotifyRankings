@@ -1,7 +1,6 @@
 # Spotify Rankings
 
 ## Description
-
 A machine learning project based on the *Kaggle* dataset for the <a href="https://www.kaggle.com/edumucelli/spotifys-worldwide-daily-song-ranking">Top 200 Songs on Spotify</a>.  
 The aim of the project is to perform some kinds of predictions using this dataset.  
 The following kinds of prediction have been implemented:
@@ -14,3 +13,6 @@ The following softwares and packages are required to run the program:
 * <a href="https://pypi.org/project/pandas/0.21.1/#files">Pandas 0.21.1</a> or later
 * <a href="http://scikit-learn.org/stable/install.html">SciKit-Learn 0.19.1</a> or later
 * Various dependencies for Pandas and SciKit-Learn, such as <a href="https://www.scipy.org/scipylib/download.html">NumPy</a> and <a href="https://www.scipy.org/install.html">SciPy</a>.
+
+## Additional Informations
+The *Kaggle* dataset is not provided in this repository, but you can download it from the link in the first section.
